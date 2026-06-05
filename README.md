@@ -15,7 +15,7 @@
 <p align="center">
   <a href="#中文说明">中文</a> ·
   <a href="#english">English</a> ·
-  <a href="https://github.com/xicunwus2025-sys/codex-led-widget/releases">Download</a>
+  <a href="https://github.com/carrieyummy/codex-led-widget/releases">Download</a>
 </p>
 
 ---
@@ -95,7 +95,7 @@ Codex LED Widget 是一个 Windows 桌面悬浮小组件，用于显示本机 Co
 
 请前往 **Releases** 页面下载最新版 Windows `.exe` 文件：
 
-👉 [前往 Releases 下载](https://github.com/xicunwus2025-sys/codex-led-widget/releases)
+👉 [前往 Releases 下载](https://github.com/carrieyummy/codex-led-widget/releases)
 
 当前版本：`v0.1.0`
 
@@ -111,7 +111,7 @@ Codex LED Widget 是一个 Windows 桌面悬浮小组件，用于显示本机 Co
 
 ## 📦 使用方法
 
-1. 打开 [Releases](https://github.com/xicunwus2025-sys/codex-led-widget/releases) 页面。
+1. 打开 [Releases](https://github.com/carrieyummy/codex-led-widget/releases) 页面。
 2. 下载最新版本的 `.exe` 文件。
 3. 确保电脑上已经安装并登录 Codex。
 4. 双击运行 `.exe`。
@@ -366,7 +366,7 @@ It uses a transparent liquid-glass interface and a simple red / yellow / green L
 
 Download the latest Windows `.exe` from the **Releases** page:
 
-👉 [Download from Releases](https://github.com/xicunwus2025-sys/codex-led-widget/releases)
+👉 [Download from Releases](https://github.com/carrieyummy/codex-led-widget/releases)
 
 Current version: `v0.1.0`
 
@@ -382,7 +382,7 @@ Current version: `v0.1.0`
 
 ## 📦 How to Use
 
-1. Go to the [Releases](https://github.com/xicunwus2025-sys/codex-led-widget/releases) page.
+1. Go to the [Releases](https://github.com/carrieyummy/codex-led-widget/releases) page.
 2. Download the latest `.exe` file.
 3. Make sure Codex is installed and signed in on your computer.
 4. Double-click the `.exe` to run the widget.
