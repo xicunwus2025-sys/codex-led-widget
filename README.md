@@ -255,23 +255,13 @@ codex-led-widget/
 
 ---
 
-## 🗺️ 后续计划
-
-* [ ] 支持自定义刷新间隔
-* [ ] 增加开机自启动选项
-* [ ] 增加更多主题预设
-* [ ] 优化 Codex 未登录时的提示
-* [ ] 优化打包和代码签名流程
-
----
-
 ## 🤝 参与贡献
 
 欢迎提交 Issue 和 Pull Request。
 
 如果你发现 Bug、有功能建议，或者想改进界面，可以直接打开一个 Issue。
 
-支持：hkkangzhuo@qq.com
+支持：1218615410@qq.com
 
 ---
 
@@ -525,23 +515,13 @@ This is expected. When the window height is reduced, the widget hides secondary 
 
 ---
 
-## 🗺️ Roadmap
-
-* [ ] Add custom refresh interval
-* [ ] Add startup on boot option
-* [ ] Add more theme presets
-* [ ] Improve the Codex-not-signed-in message
-* [ ] Improve packaging and code signing
-
----
-
 ## 🤝 Contributing
 
 Issues and pull requests are welcome.
 
 If you find a bug, have a feature request, or want to improve the UI, feel free to open an issue.
 
-Support: hkkangzhuo@qq.com
+Support: 1218615410@qq.com
 
 ---
 
