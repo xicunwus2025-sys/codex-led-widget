@@ -8,6 +8,8 @@ let mainWindow;
 let tray;
 let isAlwaysOnTop = true;
 let saveBoundsTimer;
+let currentLanguage = "zh";
+let latestQuota;
 
 const defaultBounds = {
   width: 291,
@@ -177,18 +179,48 @@ function setWindowBounds(bounds) {
   return mainWindow.getBounds();
 }
 
-function updateTrayStatus(state) {
+function updateTrayStatus(state, quota = latestQuota) {
   const nextState = trayStates[state] ? state : "loading";
   const icon = createTrayIcon(nextState);
 
   if (tray) {
     tray.setImage(icon);
-    tray.setToolTip(`Codex Quota Widget - ${trayStates[nextState].label}`);
+    tray.setToolTip(createTrayTooltip(nextState, quota));
   }
 
   if (mainWindow && typeof mainWindow.setIcon === "function") {
     mainWindow.setIcon(icon);
   }
+}
+
+function createTrayTooltip(state, quota) {
+  if (!quota?.limits?.length) {
+    return `Codex Quota Widget - ${trayStates[state].label}`;
+  }
+
+  return [
+    "Codex Quota Widget",
+    ...quota.limits.map((limit) => `${formatTrayLimitName(limit)}: ${formatTrayWindow("5h", limit.primary)} / ${formatTrayWindow("7d", limit.secondary)}`)
+  ].join("\n");
+}
+
+function formatTrayLimitName(limit) {
+  if (limit.limitId === "codex") return "Codex";
+  return limit.limitName || limit.limitId || "Unknown";
+}
+
+function formatTrayWindow(label, window) {
+  if (currentLanguage === "zh") {
+    const zhLabel = label === "5h" ? "5小时额度" : "7天额度";
+    return `${zhLabel} ${formatTrayRemaining(window)}`;
+  }
+
+  return `${label} limit ${formatTrayRemaining(window)}`;
+}
+
+function formatTrayRemaining(window) {
+  if (!window || !Number.isFinite(window.remainingPercent)) return "--";
+  return `${Math.round(window.remainingPercent)}%`;
 }
 
 function getQuotaState(quota) {
@@ -324,7 +356,8 @@ app.whenReady().then(() => {
     updateTrayStatus("loading");
     try {
       const quota = await getQuota();
-      updateTrayStatus(getQuotaState(quota));
+      latestQuota = quota;
+      updateTrayStatus(getQuotaState(quota), quota);
       return quota;
     } catch (error) {
       updateTrayStatus("error");
@@ -337,6 +370,10 @@ app.whenReady().then(() => {
   ipcMain.handle("window:bounds:set", (_event, bounds) => setWindowBounds(bounds));
   ipcMain.handle("window:alwaysOnTop:get", () => isAlwaysOnTop);
   ipcMain.handle("window:alwaysOnTop:set", (_event, value) => setAlwaysOnTop(value));
+  ipcMain.handle("app:language:set", (_event, language) => {
+    currentLanguage = language === "en" ? "en" : "zh";
+    updateTrayStatus(getQuotaState(latestQuota), latestQuota);
+  });
   ipcMain.handle("external:openCodex", () => {
     shell.openPath(path.join(process.env.LOCALAPPDATA || "", "OpenAI", "Codex", "bin", "codex.exe"));
   });

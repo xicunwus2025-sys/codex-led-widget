@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("codexQuota", {
   setWindowBounds: (bounds) => ipcRenderer.invoke("window:bounds:set", bounds),
   getAlwaysOnTop: () => ipcRenderer.invoke("window:alwaysOnTop:get"),
   setAlwaysOnTop: (value) => ipcRenderer.invoke("window:alwaysOnTop:set", value),
+  setLanguage: (language) => ipcRenderer.invoke("app:language:set", language),
   openCodex: () => ipcRenderer.invoke("external:openCodex"),
   onRefresh: (callback) => {
     ipcRenderer.on("quota:refresh", callback);

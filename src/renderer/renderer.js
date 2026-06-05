@@ -8,6 +8,7 @@ const i18n = {
     error: "读取失败",
     primary: "5 小时限额",
     secondary: "7 天限额",
+    limitSuffix: "限额",
     remaining: "剩余",
     resetTime: "重置时间",
     palette: "调色盘",
@@ -35,6 +36,7 @@ const i18n = {
     error: "Read failed",
     primary: "5h limit",
     secondary: "7d limit",
+    limitSuffix: "Quota",
     remaining: "Remaining",
     resetTime: "Reset",
     palette: "Theme",
@@ -58,6 +60,7 @@ const i18n = {
 let language = localStorage.getItem("language") || "zh";
 let isAlwaysOnTop = true;
 let refreshTimer = null;
+let latestQuota = null;
 
 const FIXED_WINDOW_WIDTH = 291;
 const MIN_WINDOW_HEIGHT = 72;
@@ -221,6 +224,7 @@ function formatResetTime(iso) {
 }
 
 function updateQuota(quota) {
+  latestQuota = quota;
   const percent = Number.isFinite(quota.remainingPercent) ? quota.remainingPercent : 0;
   const state = stateForRemaining(percent);
 
@@ -238,7 +242,7 @@ function renderQuotaList(limits) {
     if (limit.limitId !== "codex") group.classList.add("secondary-limit");
 
     const title = document.createElement("h2");
-    title.textContent = `${limit.limitName || t("unknown")} 限额`;
+    title.textContent = `${limit.limitName || t("unknown")} ${t("limitSuffix")}`;
     group.appendChild(title);
 
     group.appendChild(createQuotaRow(t("primary"), limit.primary, "primary"));
@@ -304,14 +308,17 @@ async function bootstrap() {
 
   if (window.codexQuota) {
     isAlwaysOnTop = await window.codexQuota.getAlwaysOnTop();
+    window.codexQuota.setLanguage?.(language);
     updatePinButton();
   }
 
   els.langBtn.addEventListener("click", () => {
     language = language === "zh" ? "en" : "zh";
     localStorage.setItem("language", language);
+    window.codexQuota?.setLanguage?.(language);
     applyLabels();
-    refreshQuota();
+    if (latestQuota) updateQuota(latestQuota);
+    else refreshQuota();
   });
 
   els.paletteBtn.addEventListener("click", () => {
