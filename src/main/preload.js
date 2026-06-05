@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld("codexQuota", {
   getQuota: () => ipcRenderer.invoke("quota:get"),
   minimize: () => ipcRenderer.invoke("window:minimize"),
   close: () => ipcRenderer.invoke("window:close"),
+  getWindowBounds: () => ipcRenderer.invoke("window:bounds:get"),
+  setWindowBounds: (bounds) => ipcRenderer.invoke("window:bounds:set", bounds),
   getAlwaysOnTop: () => ipcRenderer.invoke("window:alwaysOnTop:get"),
   setAlwaysOnTop: (value) => ipcRenderer.invoke("window:alwaysOnTop:set", value),
   openCodex: () => ipcRenderer.invoke("external:openCodex"),

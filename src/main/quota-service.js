@@ -6,9 +6,13 @@ const DEFAULT_TIMEOUT_MS = 12000;
 
 function resolveCodexPath() {
   const localAppData = process.env.LOCALAPPDATA || "";
+  const userProfile = process.env.USERPROFILE || "";
   const candidates = [
     process.env.CODEX_CLI_PATH,
-    path.join(localAppData, "OpenAI", "Codex", "bin", "codex.exe")
+    path.join(localAppData, "OpenAI", "Codex", "bin", "codex.exe"),
+    ...findExtensionCodexCandidates(path.join(userProfile, ".cursor", "extensions")),
+    ...findExtensionCodexCandidates(path.join(userProfile, ".vscode", "extensions")),
+    ...findExtensionCodexCandidates(path.join(userProfile, ".trae", "extensions"))
   ].filter(Boolean);
 
   for (const candidate of candidates) {
@@ -18,30 +22,64 @@ function resolveCodexPath() {
   return "codex";
 }
 
+function findExtensionCodexCandidates(extensionsDir) {
+  if (!extensionsDir || !fs.existsSync(extensionsDir)) return [];
+
+  return fs
+    .readdirSync(extensionsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name.startsWith("openai.chatgpt-"))
+    .map((entry) => path.join(extensionsDir, entry.name, "bin", "windows-x86_64", "codex.exe"))
+    .sort()
+    .reverse();
+}
+
 async function getQuota() {
   const response = await requestRateLimits();
-  const snapshot =
-    response.rateLimitsByLimitId?.codex ||
-    response.rateLimits ||
-    firstSnapshot(response.rateLimitsByLimitId);
+  const snapshots = collectSnapshots(response);
 
-  if (!snapshot) {
+  if (snapshots.length === 0) {
     throw new Error("Codex did not return a rate-limit snapshot.");
   }
 
-  return normalizeSnapshot(snapshot);
+  return normalizeQuotaResponse(snapshots);
 }
 
-function firstSnapshot(map) {
-  if (!map || typeof map !== "object") return null;
-  const firstKey = Object.keys(map)[0];
-  return firstKey ? map[firstKey] : null;
+function collectSnapshots(response) {
+  const byId = response.rateLimitsByLimitId;
+  if (byId && typeof byId === "object") {
+    const orderedIds = ["codex", ...Object.keys(byId).filter((id) => id !== "codex").sort()];
+    return orderedIds.map((id) => byId[id]).filter(Boolean);
+  }
+
+  return response.rateLimits ? [response.rateLimits] : [];
+}
+
+function normalizeQuotaResponse(snapshots) {
+  const limits = snapshots.map(normalizeSnapshot);
+  const windows = limits.flatMap((limit) =>
+    [
+      limit.primary ? { limit, window: limit.primary } : null,
+      limit.secondary ? { limit, window: limit.secondary } : null
+    ].filter(Boolean)
+  );
+  const activeWindow = windows.reduce((lowest, item) => {
+    if (!lowest) return item.window;
+    return item.window.remainingPercent < lowest.remainingPercent ? item.window : lowest;
+  }, null);
+
+  return {
+    limits,
+    planType: limits[0]?.planType || "unknown",
+    remainingPercent: activeWindow ? activeWindow.remainingPercent : null,
+    usedPercent: activeWindow ? activeWindow.usedPercent : null,
+    resetsAt: activeWindow ? activeWindow.resetsAt : null,
+    fetchedAt: new Date().toISOString()
+  };
 }
 
 function normalizeSnapshot(snapshot) {
   const primary = normalizeWindow(snapshot.primary);
   const secondary = normalizeWindow(snapshot.secondary);
-  const activeWindow = primary || secondary;
 
   return {
     limitId: snapshot.limitId || "codex",
@@ -50,11 +88,7 @@ function normalizeSnapshot(snapshot) {
     reachedType: snapshot.rateLimitReachedType || null,
     credits: snapshot.credits || null,
     primary,
-    secondary,
-    remainingPercent: activeWindow ? activeWindow.remainingPercent : null,
-    usedPercent: activeWindow ? activeWindow.usedPercent : null,
-    resetsAt: activeWindow ? activeWindow.resetsAt : null,
-    fetchedAt: new Date().toISOString()
+    secondary
   };
 }
 

@@ -10,6 +10,14 @@
     <main class="widget">
       <div class="ambient ambient-a"></div>
       <div class="ambient ambient-b"></div>
+      <div class="resize-handle resize-n" data-edge="n"></div>
+      <div class="resize-handle resize-e" data-edge="e"></div>
+      <div class="resize-handle resize-s" data-edge="s"></div>
+      <div class="resize-handle resize-w" data-edge="w"></div>
+      <div class="resize-handle resize-ne" data-edge="ne"></div>
+      <div class="resize-handle resize-se" data-edge="se"></div>
+      <div class="resize-handle resize-sw" data-edge="sw"></div>
+      <div class="resize-handle resize-nw" data-edge="nw"></div>
 
       <header class="titlebar">
         <div class="brand">
@@ -20,6 +28,15 @@
           </div>
         </div>
         <div class="window-actions">
+          <button id="paletteBtn" class="icon-button" title="调色盘" aria-label="调色盘">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 22a10 10 0 1 1 10-10c0 1.7-1 2.8-2.7 2.8h-1.7c-.9 0-1.6.7-1.6 1.6 0 .4.1.7.3 1 .7 1.1-.1 2.6-1.5 2.6H12z" />
+              <circle cx="7.5" cy="10.5" r="1" />
+              <circle cx="10.5" cy="7.5" r="1" />
+              <circle cx="14.5" cy="7.5" r="1" />
+              <circle cx="16.5" cy="11" r="1" />
+            </svg>
+          </button>
           <button id="langBtn" class="text-button" title="Language" aria-label="Language">EN</button>
           <button id="pinBtn" class="icon-button active" title="取消置顶" aria-label="取消置顶">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -44,40 +61,26 @@
         </div>
       </header>
 
-      <section class="content">
-        <div id="liquidMeter" class="liquid-meter" aria-label="Codex 剩余额度">
-          <div class="glass-rim"></div>
-          <div id="liquidFill" class="liquid-fill">
-            <div class="wave wave-one"></div>
-            <div class="wave wave-two"></div>
-          </div>
-          <div class="shine"></div>
-          <div class="meter-copy">
-            <strong id="remaining">--%</strong>
-            <span id="remainingLabel">剩余</span>
-          </div>
-        </div>
+      <div id="themeOverlay" class="theme-overlay" hidden></div>
 
-        <div class="quota-panel">
-          <div class="quota-card primary">
-            <span id="primaryLabel">5小时窗口</span>
-            <strong id="primaryText">--</strong>
-          </div>
-          <div class="quota-card">
-            <span id="secondaryLabel">7天窗口</span>
-            <strong id="secondaryText">--</strong>
-          </div>
-          <div class="quota-card slim">
-            <span id="planLabel">计划</span>
-            <strong id="planText">--</strong>
-          </div>
-        </div>
+      <section id="themePanel" class="theme-panel" hidden>
+        <label class="theme-field">
+          <span id="bgColorLabel">背景色</span>
+          <input id="bgColorInput" type="color" value="#0a2f35" />
+        </label>
+        <label class="theme-field">
+          <span id="textColorLabel">字体色</span>
+          <input id="textColorInput" type="color" value="#dbf5f1" />
+        </label>
+        <label class="theme-field">
+          <span id="opacityLabel">透明度</span>
+          <input id="opacityInput" type="range" min="35" max="95" value="72" />
+        </label>
       </section>
 
-      <footer class="status">
-        <span id="statusDot" class="status-dot loading"></span>
-        <span id="statusText">正在读取 Codex 额度...</span>
-      </footer>
+      <section class="content">
+        <div id="quotaList" class="quota-list" aria-label="Codex 限额列表"></div>
+      </section>
     </main>
 
     <script src="./renderer.js"></script>
