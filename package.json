@@ -1,20 +1,19 @@
 {
-  "name": "codex-led-widget",
+  "name": "codex-quota-glass-widget",
   "version": "0.1.0",
-  "description": "Windows desktop LED widget for showing local Codex usage quota.",
+  "description": "Liquid glass desktop widget for local Codex quota.",
+  "author": "Codex Quota Glass Widget contributors",
   "main": "src/main/main.js",
-  "author": "Codex Quota Widget Contributors",
+  "private": false,
   "license": "MIT",
-  "private": true,
   "scripts": {
-    "dev": "electron .",
     "start": "electron .",
-    "build": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win portable",
-    "build:dir": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --dir"
+    "build:dir": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --dir",
+    "build": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win portable"
   },
   "build": {
-    "appId": "cn.codex.quota.widget",
-    "productName": "Codex Quota Widget",
+    "appId": "local.codex.quota.glass.widget",
+    "productName": "Codex Quota Glass",
     "directories": {
       "output": "dist"
     },
@@ -27,18 +26,16 @@
       "target": [
         {
           "target": "portable",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         }
       ]
     },
     "portable": {
-      "artifactName": "Codex-Quota-Widget-${version}-win-x64.exe"
+      "artifactName": "CodexQuotaGlass.exe"
     }
   },
   "devDependencies": {
-    "electron": "^31.7.7",
-    "electron-builder": "^24.13.3"
+    "electron": "31.7.7",
+    "electron-builder": "24.13.3"
   }
 }

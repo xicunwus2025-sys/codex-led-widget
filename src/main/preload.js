@@ -1,16 +1,15 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("codexQuota", {
-  getQuota: () => ipcRenderer.invoke("quota:get"),
-  minimize: () => ipcRenderer.invoke("window:minimize"),
+contextBridge.exposeInMainWorld("quotaWidget", {
+  readQuota: () => ipcRenderer.invoke("quota:read"),
   close: () => ipcRenderer.invoke("window:close"),
-  getAlwaysOnTop: () => ipcRenderer.invoke("window:alwaysOnTop:get"),
-  setAlwaysOnTop: (value) => ipcRenderer.invoke("window:alwaysOnTop:set", value),
-  openCodex: () => ipcRenderer.invoke("external:openCodex"),
-  onRefresh: (callback) => {
-    ipcRenderer.on("quota:refresh", callback);
-  },
-  onAlwaysOnTopChanged: (callback) => {
-    ipcRenderer.on("window:alwaysOnTopChanged", (_event, value) => callback(value));
-  }
+  hide: () => ipcRenderer.invoke("window:hide"),
+  setSize: (size) => ipcRenderer.invoke("window:setSize", size),
+  setSizeAtOrbCenter: (size, screenCenterX, screenCenterY, localCenterX, localCenterY) =>
+    ipcRenderer.invoke("window:setSizeAtOrbCenter", size, screenCenterX, screenCenterY, localCenterX, localCenterY),
+  getSize: () => ipcRenderer.invoke("window:getSize"),
+  getBounds: () => ipcRenderer.invoke("window:getBounds"),
+  showPeek: (screenCenterX, screenCenterY) => ipcRenderer.invoke("window:showPeek", screenCenterX, screenCenterY),
+  hidePeek: (screenCenterX, screenCenterY) => ipcRenderer.invoke("window:hidePeek", screenCenterX, screenCenterY),
+  moveTo: (x, y) => ipcRenderer.send("window:moveTo", x, y)
 });

@@ -3,81 +3,79 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Codex LED Widget</title>
+    <title>Codex Quota Glass</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-state="loading">
-    <main class="widget">
-      <div class="ambient ambient-a"></div>
-      <div class="ambient ambient-b"></div>
+  <body data-size="medium" data-state="loading">
+    <main class="shell">
+      <div class="aura aura-red"></div>
+      <div class="aura aura-blue"></div>
+      <div class="top-glint"></div>
 
-      <header class="titlebar">
+      <header class="header">
         <div class="brand">
-          <span id="trafficLight" class="traffic-light loading" aria-hidden="true"></span>
-          <div>
-            <span id="brandName" class="brand-name">Codex 额度</span>
-            <span id="stateText" class="brand-state">读取中</span>
+          <span id="led" class="led"></span>
+          <div class="brand-copy">
+            <strong>Codex 额度</strong>
+            <span id="stateText">读取中</span>
           </div>
         </div>
-        <div class="window-actions">
-          <button id="langBtn" class="text-button" title="Language" aria-label="Language">EN</button>
-          <button id="pinBtn" class="icon-button active" title="取消置顶" aria-label="取消置顶">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M14 4l6 6-3 1-4 4v4l-2 2-2-6-6-2 2-2h4l4-4 1-3z" />
-            </svg>
-          </button>
-          <button id="refreshBtn" class="icon-button" title="刷新" aria-label="刷新">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20 12a8 8 0 0 1-13.7 5.7M4 12A8 8 0 0 1 17.7 6.3M17 3v4h-4M7 21v-4h4" />
-            </svg>
-          </button>
-          <button id="minimizeBtn" class="icon-button" title="隐藏" aria-label="隐藏">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14" />
-            </svg>
-          </button>
-          <button id="closeBtn" class="icon-button danger" title="退出" aria-label="退出">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 6l12 12M18 6 6 18" />
-            </svg>
-          </button>
-        </div>
+        <nav class="actions">
+          <span id="planBadge" class="plan-badge">--</span>
+          <button id="refreshBtn" title="刷新">↻</button>
+          <button id="closeBtn" title="关闭">×</button>
+        </nav>
       </header>
 
       <section class="content">
-        <div id="liquidMeter" class="liquid-meter" aria-label="Codex 剩余额度">
-          <div class="glass-rim"></div>
-          <div id="liquidFill" class="liquid-fill">
-            <div class="wave wave-one"></div>
-            <div class="wave wave-two"></div>
+        <div class="orb">
+          <div id="liquid" class="liquid">
+            <svg class="water-svg" viewBox="0 0 240 160" preserveAspectRatio="none" aria-hidden="true">
+              <path class="water-fill" d="M0 16 C 15 4, 45 4, 60 16 C 75 28, 105 28, 120 16 C 135 4, 165 4, 180 16 C 195 28, 225 28, 240 16 L240 160 L0 160 Z" />
+            </svg>
+            <svg class="water-svg water-svg-b" viewBox="0 0 240 160" preserveAspectRatio="none" aria-hidden="true">
+              <path class="water-fill secondary-fill" d="M0 16 C 15 28, 45 28, 60 16 C 75 4, 105 4, 120 16 C 135 28, 165 28, 180 16 C 195 4, 225 4, 240 16 L240 160 L0 160 Z" />
+            </svg>
+            <span class="bubble bubble-a"></span>
+            <span class="bubble bubble-b"></span>
+            <span class="bubble bubble-c"></span>
           </div>
-          <div class="shine"></div>
-          <div class="meter-copy">
+          <div class="orb-shine"></div>
+          <div class="orb-copy">
             <strong id="remaining">--%</strong>
-            <span id="remainingLabel">剩余</span>
+            <span>remaining</span>
           </div>
         </div>
 
-        <div class="quota-panel">
-          <div class="quota-card primary">
-            <span id="primaryLabel">5小时窗口</span>
+        <div class="metrics">
+          <article class="metric primary">
+            <span>5h window</span>
             <strong id="primaryText">--</strong>
-          </div>
-          <div class="quota-card">
-            <span id="secondaryLabel">7天窗口</span>
+          </article>
+          <article class="metric secondary">
+            <span>7d window</span>
             <strong id="secondaryText">--</strong>
-          </div>
-          <div class="quota-card slim">
-            <span id="planLabel">计划</span>
+          </article>
+          <article class="metric plan">
+            <span>plan</span>
             <strong id="planText">--</strong>
+          </article>
+        </div>
+
+        <div class="peek-panel">
+          <div class="peek-group">
+            <span class="peek-label">5h</span>
+            <strong id="peekPrimary" class="peek-value">--</strong>
           </div>
+          <div class="peek-group">
+            <span class="peek-label">7d</span>
+            <strong id="peekSecondary" class="peek-value">--</strong>
+          </div>
+          <em id="peekPlan">--</em>
         </div>
       </section>
 
-      <footer class="status">
-        <span id="statusDot" class="status-dot loading"></span>
-        <span id="statusText">正在读取 Codex 额度...</span>
-      </footer>
+      <footer id="statusText" class="status">Reading Codex quota...</footer>
     </main>
 
     <script src="./renderer.js"></script>
