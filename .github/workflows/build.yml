@@ -1,0 +1,80 @@
+name: Build and Auto Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+permissions:
+  contents: write # Allows pushing commits, tags, and creating releases
+
+jobs:
+  release:
+    name: Auto Version and Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # Fetches all history and tags (needed for npm version)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        shell: powershell
+
+      - name: Bump Version and Get Tag
+        run: |
+          # Automatically increment patch version (e.g. 0.1.0 -> 0.1.1)
+          npm version patch -m "chore(release): v%s [skip ci]"
+          
+          # Read the new version from package.json and save to env
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "NEW_TAG=v$version" >> $env:GITHUB_ENV
+        shell: powershell
+
+      - name: Push Version Commit and Tags
+        run: |
+          # Push the package.json commit and the new tag back to GitHub
+          git push origin HEAD:${{ github.ref_name }} --tags
+        shell: powershell
+
+      - name: Install Dependencies
+        run: |
+          if (Test-Path package-lock.json) {
+            npm ci
+          } else {
+            npm install
+          }
+        shell: powershell
+
+      - name: Build Electron App
+        run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.NEW_TAG }}
+          name: Release ${{ env.NEW_TAG }}
+          body: |
+            ### 自动发布的版本 / Automated Release: ${{ env.NEW_TAG }}
+            
+            - **Windows 安装版 (Installer)**: 下载 `Codex-Quota-Widget-${{ env.NEW_TAG }}-win-x64.exe` (建议使用此版本，能彻底避免由于中文路径导致的 `ffmpeg.dll` 报错)
+            - **Windows 便携版 (Portable)**: 下载 `Codex-Quota-Widget-${{ env.NEW_TAG }}-win-x64.exe` (如果您的 Windows 用户名不含中文/特殊字符)
+          files: |
+            dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
