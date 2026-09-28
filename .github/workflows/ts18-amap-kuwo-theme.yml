@@ -1,0 +1,115 @@
+name: Build TS18 Amap Kuwo Theme
+
+on:
+  push:
+    branches:
+      - ts18-amap-kuwo-theme
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+
+      - name: Checkout upstream TS18 theme project
+        uses: actions/checkout@v4
+        with:
+          repository: cbkii/ts-theme
+          ref: main
+          path: src
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 9.5.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.0"
+
+      - name: Install Android SDK inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          "$sdkmanager" "platforms;android-29" "build-tools;36.0.0" >/dev/null
+
+      - name: Install image tooling
+        run: python3 -m pip install --disable-pip-version-check pillow
+
+      - name: Apply custom theme
+        run: python3 build-tools/ts18_theme_patch.py
+
+      - name: Fetch pinned RePlugin compatibility library
+        working-directory: src
+        run: python3 tools/fetch_replugin.py
+
+      - name: Build signed release APK
+        shell: bash
+        working-directory: src
+        env:
+          TS_THEME_KEYSTORE_FILE: ${{ runner.temp }}/ts18-amap-kuwo.jks
+          KEYSTORE_PASSWORD: ts18-amap-kuwo-build
+          KEY_ALIAS: ts18-amap-kuwo
+          KEY_PASSWORD: ts18-amap-kuwo-build
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -noprompt             -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 3650             -keystore "$TS_THEME_KEYSTORE_FILE"             -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD"             -dname "CN=TS18 Amap Kuwo Theme"
+          gradle --no-daemon --stacktrace             -PVERSION_NAME=1.0.0 -PVERSION_CODE=1000100             :theme:assembleRelease
+          cp theme/build/outputs/apk/release/theme-release.apk ../TS18-Amap-Kuwo-Minimal-v1.0.0.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose ../TS18-Amap-Kuwo-Minimal-v1.0.0.apk
+          sha256sum ../TS18-Amap-Kuwo-Minimal-v1.0.0.apk > ../TS18-Amap-Kuwo-Minimal-v1.0.0.apk.sha256
+
+      - name: Write install notes
+        shell: bash
+        run: |
+          cat > INSTALL.txt <<'EOF'
+          TS18 Amap + Kuwo Minimal Theme v1.0.0
+          Target: Topway TS18 / Android 10 / 1280x720 / DoFun Variety Theme
+
+          Layout
+          - Full lower desktop window: intended for Amap Auto navigation.
+          - Top media strip: DoFun external-player media controls, intended for Kuwo Music Car.
+          - Left rail: Navigation, Music, Bluetooth, Apps.
+
+          Setup targets
+          - Amap Auto package: com.autonavi.amapauto
+          - Kuwo Music Car package: cn.kuwo.kwmusiccar
+
+          After applying
+          1. Set Amap Auto as the unit's default navigation app.
+          2. Long-press/select the DoFun desktop window and choose Navigation/Amap.
+          3. Open Kuwo once and start playback.
+          4. Grant DoFun/Theme notification-listener access; select Kuwo/external player for the music card if your DoFun version exposes that selector.
+          5. Long-press the left Navigation and Music buttons to bind Amap and Kuwo if they are not already assigned.
+
+          Import
+          - First try DoFun Theme local/U-disk import.
+          - If DoFun reports "damaged file", that is normally its vendor-signature gate, not an invalid Android APK.
+          - Rooted TS18 units can use the documented RePlugin donor-slot method after making a verified backup.
+          - A common donor is sfp_ts10s because community reports it supports external players.
+
+          Safety
+          - This APK does not modify MCU, CANBUS, boot, vendor or system partitions.
+          - Keep your existing working theme available for rollback.
+          EOF
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TS18-Amap-Kuwo-Minimal-v1.0.0
+          path: |
+            TS18-Amap-Kuwo-Minimal-v1.0.0.apk
+            TS18-Amap-Kuwo-Minimal-v1.0.0.apk.sha256
+            INSTALL.txt
+          if-no-files-found: error
+          retention-days: 30
