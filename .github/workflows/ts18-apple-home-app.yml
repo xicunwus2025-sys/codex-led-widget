@@ -1,0 +1,113 @@
+name: Build TS18 Apple Home App
+
+on:
+  push:
+    branches:
+      - ts18-apple-home-app
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+
+      - name: Checkout upstream standalone TS18 launcher
+        uses: actions/checkout@v4
+        with:
+          repository: cbkii/ts-theme
+          ref: main
+          path: src
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 9.5.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.0"
+
+      - name: Install Android SDK inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          "$sdkmanager" "platforms;android-29" "build-tools;36.0.0" >/dev/null
+
+      - name: Apply standalone Apple Home UI
+        run: python3 build-tools/ts18_apple_home_patch.py
+
+      - name: Build signed release APK
+        shell: bash
+        working-directory: src
+        env:
+          TS_THEME_KEYSTORE_FILE: ${{ runner.temp }}/ts18-apple-home.jks
+          KEYSTORE_PASSWORD: ts18-apple-home-build
+          KEY_ALIAS: ts18-apple-home
+          KEY_PASSWORD: ts18-apple-home-build
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -noprompt \
+            -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 3650 \
+            -keystore "$TS_THEME_KEYSTORE_FILE" \
+            -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" \
+            -dname "CN=TS18 Apple Home App"
+          gradle --no-daemon --stacktrace \
+            -PVERSION_NAME=1.0.0 -PVERSION_CODE=1000000 \
+            :launcher:assembleRelease
+          cp launcher/build/outputs/apk/release/launcher-release.apk ../TS18-Apple-Home-v1.0.0.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose ../TS18-Apple-Home-v1.0.0.apk
+          sha256sum ../TS18-Apple-Home-v1.0.0.apk > ../TS18-Apple-Home-v1.0.0.apk.sha256
+
+      - name: Write install notes
+        shell: bash
+        run: |
+          cat > INSTALL.txt <<'EOF'
+          TS18 Apple Home v1.0.0
+          Package: com.ts18.applehome
+          Target: Topway TS18 / Android 10 / 1280x720
+
+          This is a standalone app, not a DoFun theme plugin.
+          It has a normal launcher icon and opens directly.
+
+          Main integrations:
+          - AMap Auto package: com.autonavi.amapauto
+          - Kuwo Music Car: cn.kuwo.kwmusiccar
+          - Kuwo fallback: cn.kuwo.player
+
+          Music card:
+          - On first use, tap the Kuwo card and grant Notification Access.
+          - The app then reads the active MediaSession and provides previous/play-pause/next.
+
+          AMap window:
+          - On app start, it tries a TS18/Android freeform task launch using root:
+            am start --windowingMode 5 --bounds ...
+          - If the firmware accepts this, AMap appears as a homepage window.
+          - If the firmware blocks it, the map card remains available and opens AMap full-screen.
+          - No MCU, CANBUS, boot, vendor, or system partitions are modified.
+
+          Notes:
+          - This is the first physical-compatibility build.
+          - If AMap opens full-screen instead of in the right-side window, we need one ADB capture
+            from the actual unit to discover the exact Topway/DoFun window contract.
+          EOF
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TS18-Apple-Home-v1.0.0
+          path: |
+            TS18-Apple-Home-v1.0.0.apk
+            TS18-Apple-Home-v1.0.0.apk.sha256
+            INSTALL.txt
+          if-no-files-found: error
+          retention-days: 30
