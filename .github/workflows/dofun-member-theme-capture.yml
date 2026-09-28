@@ -1,0 +1,79 @@
+name: Build DoFun Member Theme Capture
+
+on:
+  push:
+    branches:
+      - ts18-dofun-member-theme-capture
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+
+      - name: Checkout upstream TS18 launcher project
+        uses: actions/checkout@v4
+        with:
+          repository: cbkii/ts-theme
+          ref: main
+          path: src
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 9.5.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.0"
+
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          "$sdkmanager" "platforms;android-29" "build-tools;36.0.0" >/dev/null
+
+      - name: Apply member-theme capture patch
+        run: python3 build-tools/dofun_member_theme_capture_patch.py
+
+      - name: Build signed APK
+        shell: bash
+        working-directory: src
+        env:
+          TS_THEME_KEYSTORE_FILE: ${{ runner.temp }}/dofun-member-capture.jks
+          KEYSTORE_PASSWORD: dofun-member-capture
+          KEY_ALIAS: dofun-member-capture
+          KEY_PASSWORD: dofun-member-capture
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -noprompt \
+            -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 3650 \
+            -keystore "$TS_THEME_KEYSTORE_FILE" \
+            -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" \
+            -dname "CN=DoFun Member Theme Capture"
+          gradle --no-daemon --stacktrace \
+            -PVERSION_NAME=1.2.0 -PVERSION_CODE=1200000 \
+            :launcher:assembleRelease
+          cp launcher/build/outputs/apk/release/launcher-release.apk ../DoFun-Member-Theme-Capture-v1.2.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose ../DoFun-Member-Theme-Capture-v1.2.apk
+          sha256sum ../DoFun-Member-Theme-Capture-v1.2.apk > ../DoFun-Member-Theme-Capture-v1.2.apk.sha256
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DoFun-Member-Theme-Capture-v1.2
+          path: |
+            DoFun-Member-Theme-Capture-v1.2.apk
+            DoFun-Member-Theme-Capture-v1.2.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
