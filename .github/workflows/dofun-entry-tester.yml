@@ -1,0 +1,79 @@
+name: Build DoFun Entry Tester
+
+on:
+  push:
+    branches:
+      - ts18-dofun-entry-tester
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+
+      - name: Checkout upstream TS18 launcher project
+        uses: actions/checkout@v4
+        with:
+          repository: cbkii/ts-theme
+          ref: main
+          path: src
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 9.5.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.0"
+
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          "$sdkmanager" "platforms;android-29" "build-tools;36.0.0" >/dev/null
+
+      - name: Apply hidden-entry tester patch
+        run: python3 build-tools/dofun_entry_tester_patch.py
+
+      - name: Build signed APK
+        shell: bash
+        working-directory: src
+        env:
+          TS_THEME_KEYSTORE_FILE: ${{ runner.temp }}/dofun-entry-tester.jks
+          KEYSTORE_PASSWORD: dofun-entry-tester
+          KEY_ALIAS: dofun-entry-tester
+          KEY_PASSWORD: dofun-entry-tester
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -noprompt \
+            -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 3650 \
+            -keystore "$TS_THEME_KEYSTORE_FILE" \
+            -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" \
+            -dname "CN=DoFun Entry Tester"
+          gradle --no-daemon --stacktrace \
+            -PVERSION_NAME=1.0.0 -PVERSION_CODE=1000000 \
+            :launcher:assembleRelease
+          cp launcher/build/outputs/apk/release/launcher-release.apk ../DoFun-Hidden-Entry-Tester-v1.0.0.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose ../DoFun-Hidden-Entry-Tester-v1.0.0.apk
+          sha256sum ../DoFun-Hidden-Entry-Tester-v1.0.0.apk > ../DoFun-Hidden-Entry-Tester-v1.0.0.apk.sha256
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DoFun-Hidden-Entry-Tester-v1.0.0
+          path: |
+            DoFun-Hidden-Entry-Tester-v1.0.0.apk
+            DoFun-Hidden-Entry-Tester-v1.0.0.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
